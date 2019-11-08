@@ -12,11 +12,16 @@ class Cols {
   }
 
   setData(d) {
+    if (d.len) {
+      this.len = d.len;
+      delete d.len;
+    }
     this._ = d;
   }
 
   getData() {
-    return this._;
+    const { len } = this;
+    return Object.assign({ len }, this._);
   }
 
   getWidth(i) {

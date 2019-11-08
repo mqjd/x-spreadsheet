@@ -8,6 +8,7 @@ const infixExprToSuffixExpr = (src) => {
   const stack = [];
   let subStrs = []; // SUM, A1, B2, 50 ...
   let fnArgType = 0; // 1 => , 2 => :
+  let fnArgOperator = '';
   let fnArgsLen = 1; // A1,A2,A3...
   for (let i = 0; i < src.length; i += 1) {
     const c = src.charAt(i);
@@ -26,7 +27,8 @@ const infixExprToSuffixExpr = (src) => {
         stack.push(`"${subStrs.join('')}`);
         subStrs = [];
       } else {
-        if (subStrs.length > 0) {
+        // console.log('subStrs:', subStrs.join(''), stack);
+        if (c !== '(' && subStrs.length > 0) {
           stack.push(subStrs.join(''));
         }
         if (c === ')') {
@@ -48,34 +50,50 @@ const infixExprToSuffixExpr = (src) => {
             } catch (e) {
               // console.log(e);
             }
-          } else if (fnArgType === 1) {
+          } else if (fnArgType === 1 || fnArgType === 3) {
+            if (fnArgType === 3) stack.push(fnArgOperator);
             // fn argument => A1,A2,B5
             stack.push([c1, fnArgsLen]);
             fnArgsLen = 1;
           } else {
-            // console.log('c1:', c1, fnArgType, operatorStack);
-            while (c1 !== '(' && operatorStack.length > 0) {
+            // console.log('c1:', c1, fnArgType, stack, operatorStack);
+            while (c1 !== '(') {
               stack.push(c1);
+              if (operatorStack.length <= 0) break;
               c1 = operatorStack.pop();
             }
           }
           fnArgType = 0;
+        } else if (c === '=' || c === '>' || c === '<') {
+          const nc = src.charAt(i + 1);
+          fnArgOperator = c;
+          if (nc === '=' || nc === '-') {
+            fnArgOperator += nc;
+            i += 1;
+          }
+          fnArgType = 3;
         } else if (c === ':') {
           fnArgType = 2;
         } else if (c === ',') {
+          if (fnArgType === 3) {
+            stack.push(fnArgOperator);
+          }
           fnArgType = 1;
           fnArgsLen += 1;
         } else if (c === '(' && subStrs.length > 0) {
           // function
-          stack.pop();
           operatorStack.push(subStrs.join(''));
         } else {
           // priority: */ > +-
+          // console.log(operatorStack, c, stack);
           if (operatorStack.length > 0 && (c === '+' || c === '-')) {
-            const last = operatorStack[operatorStack.length - 1];
-            if (last === '*' || last === '/') {
+            let top = operatorStack[operatorStack.length - 1];
+            if (top !== '(') stack.push(operatorStack.pop());
+            if (top === '*' || top === '/') {
               while (operatorStack.length > 0) {
-                stack.push(operatorStack.pop());
+                top = operatorStack[operatorStack.length - 1];
+                if (top !== '(') stack.push(operatorStack.pop());
+                else break;
               }
             }
           }
@@ -114,31 +132,45 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   // console.log(':::::formulaMap:', formulaMap);
   for (let i = 0; i < srcStack.length; i += 1) {
     // console.log(':::>>>', srcStack[i]);
-    if (srcStack[i] === '+') {
+    const expr = srcStack[i];
+    const fc = expr[0];
+    if (expr === '+') {
       const top = stack.pop();
-      const bottom = stack.pop();
-      stack.push(Number(bottom) + Number(top));
-    } else if (srcStack[i] === '-') {
-      const top = stack.pop();
-      stack.push(Number(stack.pop()) - Number(top));
-    } else if (srcStack[i] === '*') {
+      stack.push(Number(stack.pop()) + Number(top));
+    } else if (expr === '-') {
+      if (stack.length === 1) {
+        const top = stack.pop();
+        stack.push(Number(top) * -1);
+      } else {
+        const top = stack.pop();
+        stack.push(Number(stack.pop()) - Number(top));
+      }
+    } else if (expr === '*') {
       stack.push(Number(stack.pop()) * Number(stack.pop()));
-    } else if (srcStack[i] === '/') {
+    } else if (expr === '/') {
       const top = stack.pop();
       stack.push(Number(stack.pop()) / Number(top));
-    } else if (Array.isArray(srcStack[i])) {
-      const [formula, len] = srcStack[i];
+    } else if (fc === '=' || fc === '>' || fc === '<') {
+      const top = stack.pop();
+      const Fn = Function;
+      stack.push(new Fn(`return ${stack.pop()} ${expr === '=' ? '==' : expr} ${top}`)());
+    } else if (Array.isArray(expr)) {
+      const [formula, len] = expr;
       const params = [];
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
+      // console.log('::::params:', formulaMap, expr,  formula, params);
       stack.push(formulaMap[formula].render(params.reverse()));
     } else {
-      if (cellList.includes(srcStack[i])) {
+      // console.log('cellList:', cellList, expr);
+      if (cellList.includes(expr)) {
         return 0;
       }
-      cellList.push(srcStack[i]);
-      stack.push(evalSubExpr(srcStack[i], cellRender));
+      if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
+        cellList.push(expr);
+      }
+      stack.push(evalSubExpr(expr, cellRender));
     }
     // console.log('stack:', stack);
   }

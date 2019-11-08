@@ -18,6 +18,12 @@ const menuItems = [
   { key: 'delete-cell-text', title: tf('contextmenu.deleteCellText') },
   { key: 'divider' },
   { key: 'validation', title: tf('contextmenu.validation') },
+  { key: 'divider' },
+  { key: 'cell-printable', title: tf('contextmenu.cellprintable') },
+  { key: 'cell-non-printable', title: tf('contextmenu.cellnonprintable') },
+  { key: 'divider' },
+  { key: 'cell-editable', title: tf('contextmenu.celleditable') },
+  { key: 'cell-non-editable', title: tf('contextmenu.cellnoneditable') },
 ];
 
 function buildMenuItem(item) {
@@ -36,16 +42,18 @@ function buildMenuItem(item) {
 }
 
 function buildMenu() {
+  
   return menuItems.map(it => buildMenuItem.call(this, it));
 }
 
 export default class ContextMenu {
-  constructor(viewFn) {
+  constructor(viewFn, isHide = false) {
     this.el = h('div', `${cssPrefix}-contextmenu`)
       .children(...buildMenu.call(this))
       .hide();
     this.viewFn = viewFn;
     this.itemClick = () => {};
+    this.isHide = isHide;
   }
 
   hide() {
@@ -55,6 +63,7 @@ export default class ContextMenu {
   }
 
   setPosition(x, y) {
+    if (this.isHide) return;
     const { el } = this;
     const { height, width } = el.show().offset();
     const view = this.viewFn();

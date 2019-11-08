@@ -254,7 +254,7 @@ class Draw {
         }
         textLine.len += ctx.measureText(txt[i]).width;
       }
-      if (textWrap && textLine.len > 0) {
+      if (textLine.len > 0) {
         this.fillText(txt.substring(textLine.start), tx, ty);
         if (strike) {
           drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, textLine.len);
@@ -266,7 +266,7 @@ class Draw {
     } else {
       this.fillText(txt, tx, ty);
       if (strike) {
-        drawFontLine.call(this, 'striket', tx, ty, align, valign, font.size, txtWidth);
+        drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, txtWidth);
       }
       if (underline) {
         drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, txtWidth);
@@ -337,6 +337,24 @@ class Draw {
     ctx.restore();
   }
 
+  dropdown(box) {
+    const { ctx } = this;
+    const {
+      x, y, width, height,
+    } = box;
+    const sx = x + width - 15;
+    const sy = y + height - 15;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx), npx(sy));
+    ctx.lineTo(npx(sx + 8), npx(sy));
+    ctx.lineTo(npx(sx + 4), npx(sy + 6));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 0, 0, .45)';
+    ctx.fill();
+    ctx.restore();
+  }
+
   error(box) {
     const { ctx } = this;
     const { x, y, width } = box;
@@ -352,6 +370,21 @@ class Draw {
     ctx.restore();
   }
 
+  frozen(box) {
+    const { ctx } = this;
+    const { x, y, width } = box;
+    const sx = x + width - 1;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 8), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 8));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 255, 0, .85)';
+    ctx.fill();
+    ctx.restore();
+  }
+  
   rect(box, dtextcb) {
     const { ctx } = this;
     const {

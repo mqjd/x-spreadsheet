@@ -33,24 +33,52 @@ function inputEventHandler(evt) {
   const v = evt.target.value;
   // console.log(evt, 'v:', v);
   const { suggest, textlineEl, validator } = this;
-  this.inputText = v;
-  if (validator) {
-    if (validator.type === 'list') {
-      suggest.search(v);
-    } else {
-      suggest.hide();
-    }
-  } else {
-    const start = v.lastIndexOf('=');
-    if (start !== -1) {
-      suggest.search(v.substring(start + 1));
-    } else {
-      suggest.hide();
-    }
+  const cell = this.cell;
+  if(cell !== null){
+    if(("editable" in cell && cell.editable == true) || (cell['editable'] === undefined)) {
+      this.inputText = v;
+      if (validator) {
+        if (validator.type === 'list') {
+          suggest.search(v);
+        } else {
+          suggest.hide();
+        }
+      } else {
+        const start = v.lastIndexOf('=');
+        if (start !== -1) {
+          suggest.search(v.substring(start + 1));
+        } else {
+          suggest.hide();
+        }
+      }
+      textlineEl.html(v);
+      resetTextareaSize.call(this);
+      this.change('input', v);
+      }
+      else {
+        evt.target.value = "";
+      }
   }
-  textlineEl.html(v);
-  resetTextareaSize.call(this);
-  this.change('input', v);
+  else {
+    this.inputText = v;
+    if (validator) {
+      if (validator.type === 'list') {
+        suggest.search(v);
+      } else {
+        suggest.hide();
+      }
+    } else {
+      const start = v.lastIndexOf('=');
+      if (start !== -1) {
+        suggest.search(v.substring(start + 1));
+      } else {
+        suggest.hide();
+      }
+    }
+    textlineEl.html(v);
+    resetTextareaSize.call(this);
+    this.change('input', v);
+    }
 }
 
 function setTextareaRange(position) {
@@ -149,7 +177,6 @@ export default class Editor {
   clear() {
     // const { cell } = this;
     // const cellText = (cell && cell.text) || '';
-    // console.log(cellText, ':', this.inputText === '');
     if (this.inputText !== '') {
       this.change('finished', this.inputText);
     }
@@ -191,6 +218,7 @@ export default class Editor {
       const sOffset = { left: 0 };
       sOffset[suggestPosition] = height;
       suggest.setOffset(sOffset);
+      suggest.hide();
     }
   }
 
@@ -213,6 +241,7 @@ export default class Editor {
       }
       if (type === 'list') {
         suggest.setItems(validator.values());
+        suggest.search('');
       }
     }
   }
